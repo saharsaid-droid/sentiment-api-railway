@@ -1,5 +1,4 @@
 # --- المرحلة 1: البناء ---
-# نستخدم صورة كاملة هنا لتثبيت المكتبات
 FROM python:3.10 as builder
 
 WORKDIR /app
@@ -10,20 +9,19 @@ RUN pip install pip-autoremove
 # نسخ ملف المكتبات
 COPY requirements.txt .
 
-# تثبيت المكتبات مع خيارات لتقليل الحجم
-# --no-cache-dir: لا يخزن الكاش
-# --prefer-binary: يفضل الملفات الثنائية المترجمة مسبقًا (أسرع وأصغر)
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+# تثبيت المكتبات
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --- هذا هو المسار الصحيح لمكتبات بايثون في هذه الصورة ---
+ARG PYTHON_PACKAGES_PATH=/usr/local/lib/python3.10/site-packages
 
 # إزالة الملفات غير الضرورية من المكتبات المثبتة
-# هذا الأمر سيقوم بتقليص الحجم بشكل كبير
-RUN find /usr/local/lib/python3.10/site-packages/ -type d -name '__pycache__' -exec rm -r {} + && \
-    find /usr-local/lib/python3.10/site-packages/ -type f -name '*.pyc' -delete && \
-    pip-autoremove -y pandas numpy # أزيلي المكتبات الكبيرة التي لا نحتاجها في النسخة النهائية
+RUN find ${PYTHON_PACKAGES_PATH} -type d -name '__pycache__' -exec rm -r {} + && \
+    find ${PYTHON_PACKAGES_PATH} -type f -name '*.pyc' -delete && \
+    pip-autoremove -y pandas numpy mysql-connector-python pyyaml
 
 
 # --- المرحلة 2: التشغيل ---
-# نستخدم صورة "slim" صغيرة جدًا للتشغيل النهائي
 FROM python:3.10-slim
 
 WORKDIR /app
@@ -39,4 +37,3 @@ EXPOSE 8080
 
 # الأمر للتشغيل
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-
