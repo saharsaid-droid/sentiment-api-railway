@@ -11,9 +11,14 @@ RUN pip install --no-cache-dir azure-storage-blob python-dotenv
 COPY download_model.py .
 
 # تشغيل سكربت التنزيل (سيقرأ متغير البيئة من أمر البناء)
-RUN --mount=type=secret,id=azure_connection_string \
-    export AZURE_STORAGE_CONNECTION_STRING=$(cat /run/secrets/azure_connection_string) && \
+# تشغيل سكربت التنزيل (سيقرأ متغير البيئة من أمر البناء)
+# هذه هي الطريقة الصحيحة لتمرير الأسرار
+ARG AZURE_STORAGE_CONNECTION_STRING
+RUN --mount=type=bind,source=download_model.py,target=download_model.py \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    pip install --no-cache-dir azure-storage-blob python-dotenv && \
     python download_model.py
+
 
 
 # المرحلة الثانية: مرحلة التشغيل النهائية
